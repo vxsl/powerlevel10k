@@ -1679,38 +1679,41 @@ function ask_zshrc_edit() {
   check_zshrc_integration || quit -c
   [[ $instant_prompt == off ]] && zshrc_has_instant_prompt=1
   (( zshrc_has_cfg && zshrc_has_instant_prompt )) && return
-
-  add_widget 0 flowing -c %BApply changes to "%b%2F${__p9k_zshrc_u//\\/\\\\}%f%B?%b"
-  add_widget 0 print -P ""
-  add_widget 1
-  local modifiable=y
-  if [[ ! -w $__p9k_zd ]]; then
-    modifiable=
-    add_widget 0 flowing -c %3FWARNING:%f %2F${__p9k_zd_u//\\/\\\\}%f %3Fis readonly.%f
+  
+  choice=$P10K_WIZARD_CHOICE_APPLY_CHANGES 
+  if [ -z $choice ]; then
+    add_widget 0 flowing -c %BApply changes to "%b%2F${__p9k_zshrc_u//\\/\\\\}%f%B?%b"
     add_widget 0 print -P ""
-  elif [[ -e $__p9k_zshrc && ! -w $__p9k_zshrc ]]; then
-    local -a stat
-    zstat -A stat +uid -- $__p9k_zshrc || quit -c
-    if (( stat[1] == EUID )); then
-      add_widget 0 flowing -c %3FNOTE:%f %2F${__p9k_zshrc_u//\\/\\\\}%f %3Fis readonly.%f
-    else
+    add_widget 1
+    local modifiable=y
+    if [[ ! -w $__p9k_zd ]]; then
       modifiable=
-      add_widget 0 flowing -c                                           \
-        %3FWARNING:%f %2F${__p9k_zshrc_u//\\/\\\\}%f %3Fis readonly and \
-        not owned by the user. Cannot modify it.%f
+      add_widget 0 flowing -c %3FWARNING:%f %2F${__p9k_zd_u//\\/\\\\}%f %3Fis readonly.%f
+      add_widget 0 print -P ""
+    elif [[ -e $__p9k_zshrc && ! -w $__p9k_zshrc ]]; then
+      local -a stat
+      zstat -A stat +uid -- $__p9k_zshrc || quit -c
+      if (( stat[1] == EUID )); then
+        add_widget 0 flowing -c %3FNOTE:%f %2F${__p9k_zshrc_u//\\/\\\\}%f %3Fis readonly.%f
+      else
+        modifiable=
+        add_widget 0 flowing -c                                           \
+          %3FWARNING:%f %2F${__p9k_zshrc_u//\\/\\\\}%f %3Fis readonly and \
+          not owned by the user. Cannot modify it.%f
+      fi
+      add_widget 0 print -P ""
+    fi
+    if [[ $modifiable == y ]]; then
+      add_widget 0 print -P "%B(y)  Yes (recommended).%b"
+    else
+      add_widget 0 print -P "%1F(y)  Yes (disabled).%f"
     fi
     add_widget 0 print -P ""
+    add_widget 0 flowing +c -i 5 "%B(n)  No." I know which changes to apply and will do it myself.%b
+    add_widget 0 print -P ""
+    add_widget 0 print -P "(r)  Restart from the beginning."
+    ask ${modifiable}nr
   fi
-  if [[ $modifiable == y ]]; then
-    add_widget 0 print -P "%B(y)  Yes (recommended).%b"
-  else
-    add_widget 0 print -P "%1F(y)  Yes (disabled).%f"
-  fi
-  add_widget 0 print -P ""
-  add_widget 0 flowing +c -i 5 "%B(n)  No." I know which changes to apply and will do it myself.%b
-  add_widget 0 print -P ""
-  add_widget 0 print -P "(r)  Restart from the beginning."
-  ask ${modifiable}nr
   case $choice in
     r) return 1;;
     n) return 0;;
