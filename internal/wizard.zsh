@@ -1,3 +1,13 @@
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+ENV_FILE="$SCRIPT_DIR/../.env"
+if [ -f "$ENV_FILE" ]; then
+    if command -v source &> /dev/null; then
+        source "$ENV_FILE"
+    else
+        . "$ENV_FILE"
+    fi
+fi
+
 local -i force=0
 
 local opt
@@ -884,23 +894,26 @@ function ask_style() {
     options+=lean_8colors
     return 0
   fi
-  local extra
-  add_widget 0 flowing -c "%BPrompt Style%b"
-  add_widget 0 print
-  add_widget 1
-  add_widget 0 print -P "%B(1)  Lean.%b"
-  add_prompt style=lean left_frame=0 right_frame=0
-  add_widget 0 print -P "%B(2)  Classic.%b"
-  add_prompt style=classic
-  add_widget 0 print -P "%B(3)  Rainbow.%b"
-  add_prompt style=rainbow
-  if [[ $POWERLEVEL9K_MODE != ascii ]]; then
-    extra+=4
-    add_widget 0 print -P "%B(4)  Pure.%b"
-    add_prompt style=pure
+  choice=$P10K_WIZARD_CHOICE_STYLE 
+  if [ -z $choice ]; then
+    local extra
+    add_widget 0 flowing -c "%BPrompt Style%b"
+    add_widget 0 print
+    add_widget 1
+    add_widget 0 print -P "%B(1)  Lean.%b"
+    add_prompt style=lean left_frame=0 right_frame=0
+    add_widget 0 print -P "%B(2)  Classic.%b"
+    add_prompt style=classic
+    add_widget 0 print -P "%B(3)  Rainbow.%b"
+    add_prompt style=rainbow
+    if [[ $POWERLEVEL9K_MODE != ascii ]]; then
+      extra+=4
+      add_widget 0 print -P "%B(4)  Pure.%b"
+      add_prompt style=pure
+    fi
+    add_widget 0 print -P "(r)  Restart from the beginning."
+    ask 123${extra}r
   fi
-  add_widget 0 print -P "(r)  Restart from the beginning."
-  ask 123${extra}r
   case $choice in
     r) return 1;;
     1) style=lean; left_frame=0; right_frame=0; options+=lean;;
@@ -960,15 +973,18 @@ function ask_charset() {
 function ask_color_scheme() {
   (( terminfo[colors] < 256 )) && return
   if [[ $style == lean ]]; then
-    add_widget 0 flowing -c "%BPrompt Colors%b"
-    add_widget 0 print -P ""
-    add_widget 1
-    add_widget 0 print -P "%B(1)  256 colors.%b"
-    add_prompt style=lean
-    add_widget 0 print -P "%B(2)  8 colors.%b"
-    add_prompt style=lean_8colors
-    add_widget 0 print -P "(r)  Restart from the beginning."
-    ask 12r
+    choice=$P10K_WIZARD_CHOICE_COLOR_SCHEME 
+    if [ -z $choice ]; then
+      add_widget 0 flowing -c "%BPrompt Colors%b"
+      add_widget 0 print -P ""
+      add_widget 1
+      add_widget 0 print -P "%B(1)  256 colors.%b"
+      add_prompt style=lean
+      add_widget 0 print -P "%B(2)  8 colors.%b"
+      add_prompt style=lean_8colors
+      add_widget 0 print -P "(r)  Restart from the beginning."
+      ask 12r
+    fi
     case $choice in
       r) return 1;;
       1) style=lean;;
@@ -980,15 +996,18 @@ function ask_color_scheme() {
     esac
     options=(${options:#lean} $style)
   elif [[ $style == pure && $has_truecolor == 1 ]]; then
-    add_widget 0 flowing -c "%BPrompt Colors%b"
-    add_widget 0 print -P ""
-    add_widget 1
-    add_widget 0 print -P "%B(1)  Original.%b"
-    add_prompt "pure_color=(${(j: :)${(@q)${(@kv)pure_original}}})"
-    add_widget 0 print -P "%B(2)  Snazzy.%b"
-    add_prompt "pure_color=(${(j: :)${(@q)${(@kv)pure_snazzy}}})"
-    add_widget 0 print -P "(r)  Restart from the beginning."
-    ask 12r
+    choice=$P10K_WIZARD_CHOICE_COLOR_SCHEME 
+    if [ -z $choice ]; then
+      add_widget 0 flowing -c "%BPrompt Colors%b"
+      add_widget 0 print -P ""
+      add_widget 1
+      add_widget 0 print -P "%B(1)  Original.%b"
+      add_prompt "pure_color=(${(j: :)${(@q)${(@kv)pure_original}}})"
+      add_widget 0 print -P "%B(2)  Snazzy.%b"
+      add_prompt "pure_color=(${(j: :)${(@q)${(@kv)pure_snazzy}}})"
+      add_widget 0 print -P "(r)  Restart from the beginning."
+      ask 12r
+    fi
     case $choice in
       r) return 1;;
       1)
@@ -1072,17 +1091,20 @@ function ask_ornaments_color() {
 
 function ask_time() {
   local extra
-  add_widget 0 flowing -c "%BShow current time?%b"
-  add_widget 0 print
-  add_widget 1
-  add_widget 0 print -P "%B(n)  No.%b"
-  add_prompt time=
-  add_widget 0 print -P "%B(1)  12-hour format.%b"
-  add_prompt time=$time_12h
-  add_widget 0 print -P "%B(2)  24-hour format.%b"
-  add_prompt time=$time_24h
-  add_widget 0 print -P "(r)  Restart from the beginning."
-  ask n12r
+  choice=$P10K_WIZARD_CHOICE_TIME
+  if [ -z $choice ]; then
+    add_widget 0 flowing -c "%BShow current time?%b"
+    add_widget 0 print
+    add_widget 1
+    add_widget 0 print -P "%B(n)  No.%b"
+    add_prompt time=
+    add_widget 0 print -P "%B(1)  12-hour format.%b"
+    add_prompt time=$time_12h
+    add_widget 0 print -P "%B(2)  24-hour format.%b"
+    add_prompt time=$time_24h
+    add_widget 0 print -P "(r)  Restart from the beginning."
+    ask n12r
+  fi
   case $choice in
     r) return 1;;
     n) time=;;
@@ -1094,15 +1116,18 @@ function ask_time() {
 
 function ask_use_rprompt() {
   [[ $style != pure ]] && return
-  add_widget 0 flowing -c "%BNon-permanent content location%b"
-  add_widget 0 print
-  add_widget 1
-  add_widget 0 print -P "%B(1)  Left.%b"
-  add_prompt
-  add_widget 0 print -P "%B(2)  Right.%b"
-  add_prompt pure_use_rprompt=
-  add_widget 0 print -P "(r)  Restart from the beginning."
-  ask 12r
+  choice=$P10K_WIZARD_CHOICE_NON_PERMANENT_CONTENT_LOCATION
+  if [ -z $choice ]; then
+    add_widget 0 flowing -c "%BNon-permanent content location%b"
+    add_widget 0 print
+    add_widget 1
+    add_widget 0 print -P "%B(1)  Left.%b"
+    add_prompt
+    add_widget 0 print -P "%B(2)  Right.%b"
+    add_prompt pure_use_rprompt=
+    add_widget 0 print -P "(r)  Restart from the beginning."
+    ask 12r
+  fi
   case $choice in
     r) return 1;;
     1) ;;
@@ -1404,15 +1429,18 @@ function ask_tails() {
 }
 
 function ask_num_lines() {
-  add_widget 0 flowing -c "%BPrompt Height%b"
-  add_widget 0 print
-  add_widget 1
-  add_widget 0 print -P "%B(1)  One line.%b"
-  add_prompt num_lines=1
-  add_widget 0 print -P "%B(2)  Two lines.%b"
-  add_prompt num_lines=2
-  add_widget 0 print -P "(r)  Restart from the beginning."
-  ask 12r
+  choice=$P10K_WIZARD_CHOICE_HEIGHT
+  if [ -z $choice ]; then
+    add_widget 0 flowing -c "%BPrompt Height%b"
+    add_widget 0 print
+    add_widget 1
+    add_widget 0 print -P "%B(1)  One line.%b"
+    add_prompt num_lines=1
+    add_widget 0 print -P "%B(2)  Two lines.%b"
+    add_prompt num_lines=2
+    add_widget 0 print -P "(r)  Restart from the beginning."
+    ask 12r
+  fi
   case $choice in
     r) return 1;;
     1) num_lines=1; options+='1 line';;
@@ -1478,26 +1506,29 @@ function ask_frame() {
 }
 
 function ask_empty_line() {
-  add_widget 0 flowing -c "%BPrompt Spacing%b"
-  add_widget 0 print
-  add_widget 1
-  add_widget 0 print -P "%B(1)  Compact.%b"
-  add_widget 0 print
-  add_widget 1
-  add_prompt_n
-  add_prompt_n
-  add_widget 0 print
-  add_widget 2
-  add_widget 0 print -P "%B(2)  Sparse.%b"
-  add_widget 0 print
-  add_widget 1
-  add_prompt_n
-  add_widget 0 print
-  add_prompt_n
-  add_widget 0 print
-  add_widget 2
-  add_widget 0 print -P "(r)  Restart from the beginning."
-  ask 12r
+  choice=$P10K_WIZARD_CHOICE_SPACING
+  if [ -z $choice ]; then
+    add_widget 0 flowing -c "%BPrompt Spacing%b"
+    add_widget 0 print
+    add_widget 1
+    add_widget 0 print -P "%B(1)  Compact.%b"
+    add_widget 0 print
+    add_widget 1
+    add_prompt_n
+    add_prompt_n
+    add_widget 0 print
+    add_widget 2
+    add_widget 0 print -P "%B(2)  Sparse.%b"
+    add_widget 0 print
+    add_widget 1
+    add_prompt_n
+    add_widget 0 print
+    add_prompt_n
+    add_widget 0 print
+    add_widget 2
+    add_widget 0 print -P "(r)  Restart from the beginning."
+    ask 12r
+  fi
   case $choice in
     r) return 1;;
     1) empty_line=0; options+='compact';;
@@ -1524,24 +1555,27 @@ function ask_instant_prompt() {
     options+=instant_prompt=auto-quiet
     return
   fi
-  add_widget 0 flowing -c "%BInstant Prompt Mode%b"
-  add_widget 0 print_instant_prompt_link
-  add_widget 1
-  add_widget 0 print
-  add_widget 2
-  add_widget 0 flowing +c -i 5 "%B(1)  Verbose (recommended).%b"
-  add_widget 0 print
-  add_widget 1
-  add_widget 0 flowing +c -i 5 "%B(2)  Quiet.%b" Choose this if you\'ve read and understood \
-    instant prompt documentation.
-  add_widget 0 print
-  add_widget 1
-  add_widget 0 flowing +c -i 5 "%B(3)  Off.%b" Choose this if you\'ve tried instant prompt \
-    and found it incompatible with your zsh configuration files.
-  add_widget 0 print
-  add_widget 2
-  add_widget 0 print -P "(r)  Restart from the beginning."
-  ask 123r
+  choice=$P10K_WIZARD_CHOICE_INSTANT_PROMPT_MODE
+  if [ -z $choice ]; then
+    add_widget 0 flowing -c "%BInstant Prompt Mode%b"
+    add_widget 0 print_instant_prompt_link
+    add_widget 1
+    add_widget 0 print
+    add_widget 2
+    add_widget 0 flowing +c -i 5 "%B(1)  Verbose (recommended).%b"
+    add_widget 0 print
+    add_widget 1
+    add_widget 0 flowing +c -i 5 "%B(2)  Quiet.%b" Choose this if you\'ve read and understood \
+      instant prompt documentation.
+    add_widget 0 print
+    add_widget 1
+    add_widget 0 flowing +c -i 5 "%B(3)  Off.%b" Choose this if you\'ve tried instant prompt \
+      and found it incompatible with your zsh configuration files.
+    add_widget 0 print
+    add_widget 2
+    add_widget 0 print -P "(r)  Restart from the beginning."
+    ask 123r
+  fi
   case $choice in
     r) return 1;;
     1) instant_prompt=verbose; options+=instant_prompt=verbose;;
@@ -1557,32 +1591,35 @@ function ask_transient_prompt() {
   [[ $style == pure ]] && p=$pure_color[magenta]
   [[ $style == lean_8colors ]] && p=2
   p="%F{$p}$prompt_char%f"
-  add_widget 0 flowing -c "%BEnable Transient Prompt?%b"
-  add_widget 0 print
-  add_widget 1
-  add_widget 0 print -P "%B(y)  Yes.%b"
-  add_widget 0 print
-  add_widget 1
-  add_widget 0 print -P "${(pl:$prompt_indent:: :)}$p %2Fgit%f pull"
-  add_widget 3
-  add_widget 0 print -P "${(pl:$prompt_indent:: :)}$p %2Fgit%f branch x"
-  (( empty_line )) && add_widget 0 print
-  add_prompt_n buffer="%2Fgit%f checkout x$cursor"
-  add_widget 0 print
-  add_widget 2
-  add_widget 0 print -P "%B(n)  No.%b"
-  add_widget 0 print
-  add_widget 1
-  add_widget 0 buffer="%2Fgit%f pull" print_prompt
-  add_widget 3
-  (( empty_line )) && { add_widget 0 print; add_widget 3 }
-  add_prompt_n buffer="%2Fgit%f branch x"
-  (( empty_line )) && add_widget 0 print
-  add_prompt_n buffer="%2Fgit%f checkout x$cursor"
-  add_widget 0 print
-  add_widget 2
-  add_widget 0 print -P "(r)  Restart from the beginning."
-  ask ynr
+  choice=$P10K_WIZARD_CHOICE_TRANSIENT
+  if [ -z $choice ]; then
+    add_widget 0 flowing -c "%BEnable Transient Prompt?%b"
+    add_widget 0 print
+    add_widget 1
+    add_widget 0 print -P "%B(y)  Yes.%b"
+    add_widget 0 print
+    add_widget 1
+    add_widget 0 print -P "${(pl:$prompt_indent:: :)}$p %2Fgit%f pull"
+    add_widget 3
+    add_widget 0 print -P "${(pl:$prompt_indent:: :)}$p %2Fgit%f branch x"
+    (( empty_line )) && add_widget 0 print
+    add_prompt_n buffer="%2Fgit%f checkout x$cursor"
+    add_widget 0 print
+    add_widget 2
+    add_widget 0 print -P "%B(n)  No.%b"
+    add_widget 0 print
+    add_widget 1
+    add_widget 0 buffer="%2Fgit%f pull" print_prompt
+    add_widget 3
+    (( empty_line )) && { add_widget 0 print; add_widget 3 }
+    add_prompt_n buffer="%2Fgit%f branch x"
+    (( empty_line )) && add_widget 0 print
+    add_prompt_n buffer="%2Fgit%f checkout x$cursor"
+    add_widget 0 print
+    add_widget 2
+    add_widget 0 print -P "(r)  Restart from the beginning."
+    ask ynr
+  fi
   case $choice in
     r) return 1;;
     y) transient_prompt=1; options+=transient_prompt;;
